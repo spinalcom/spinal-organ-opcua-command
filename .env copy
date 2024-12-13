@@ -1,0 +1,22 @@
+#user
+USER_ID=""
+PASSWORD=""
+
+#hub
+PROTOCOL=""
+HOST=""
+PORT=""
+
+#Digital twin
+DIGITAL_TWIN_PATH=""
+
+#context tree
+COMMAND_CONTEXT_NAME="" # obligatoire
+COMMAND_CATEGORY_NAME="" # obligatoire uniquement si COMMAND_GROUP_NAME est definie
+COMMAND_GROUP_NAME="" # pas obligatoire
+
+#bacnet
+BACNET_PRIORITY= ""
+
+NODE_TLS_REJECT_UNAUTHORIZED=0
+ORGAN_NAME = "spinal-organ-bacnet-command"
