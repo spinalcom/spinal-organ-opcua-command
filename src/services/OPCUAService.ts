@@ -71,7 +71,7 @@ export class OPCUAService extends EventEmitter {
 
     private _listenClientEvents(): void {
         this.client.on("backoff", (number, delay) => {
-            if (number === 3) return this.client.disconnect();
+            if (number === 1) return this.client.disconnect();
             console.log(`connection failed, retrying attempt ${number + 1}`)
         });
 

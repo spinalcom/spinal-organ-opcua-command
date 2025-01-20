@@ -14,23 +14,31 @@ export interface IEndpointData {
     element: SpinalBmsEndpoint;
     serverInfo: IServer;
 }
-export declare class SpinalUtils {
+export declare class SpinalGraphUtils {
     connect: spinal.FileSystem;
     private static _instance;
     private _graph;
     private _isInitialized;
-    context: SpinalContext;
     private constructor();
-    static getInstance(): SpinalUtils;
+    static getInstance(): SpinalGraphUtils;
     get graph(): SpinalGraph<any>;
     init(connect: spinal.FileSystem, digitaltwinPath: string): Promise<SpinalGraph>;
-    getStartNode(contextName: string, categoryName?: string, groupName?: string): Promise<SpinalNode>;
-    getBmsEndpointNode(startNode: SpinalNode): Promise<TModels[]>;
-    bindEndpoints(models: TModels[]): void;
+    getStartNode(contextName: string, categoryName?: string, groupName?: string): Promise<{
+        context: SpinalContext;
+        startNode: SpinalNode;
+    }>;
+    getBmsEndpointNode(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]>;
+    getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]>;
+    getEndpointDataInMap(id: string): IEndpointData | undefined;
+    addEndpointsToMap(node: SpinalNode): Promise<IEndpointData>;
+    getEndpointData(endpointNode: SpinalNode): Promise<{
+        element: SpinalBmsEndpoint;
+        attribute: SpinalAttribute;
+        serverInfo: IServer;
+    }>;
     private _getCategoryByName;
     private _getGroupByName;
-    private _getEndpointData;
     private _getEndpointControlValue;
     private _getEndpointServer;
 }
-export default SpinalUtils;
+export default SpinalGraphUtils;

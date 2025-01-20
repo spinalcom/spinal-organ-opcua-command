@@ -9,13 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const env_1 = require("./services/env");
 const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
-const SpinalGraphUtils_1 = require("./services/SpinalGraphUtils");
-const spinal_lib_organ_monitoring_1 = require("spinal-lib-organ-monitoring");
-const { protocol, userId, password, host, port, digitaltwin_path, context_name, category_name, group_name, organ_name } = env_1.default;
-const url = `${protocol}://${userId}:${password}@${host}:${port}/`;
-const connect = spinal_core_connectorjs_type_1.spinalCore.connect(url);
+const utils_1 = require("./services/utils");
 spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (code) => {
     console.log("redemarrage");
     process.exit(code); // kill le process;
@@ -23,16 +18,16 @@ spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (code) => {
 (function () {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield spinal_lib_organ_monitoring_1.default.init(connect, organ_name, host, protocol, parseInt(port));
-            const spinalUtils = SpinalGraphUtils_1.default.getInstance();
-            yield spinalUtils.init(connect, digitaltwin_path);
-            const startNode = yield spinalUtils.getStartNode(context_name, category_name, group_name);
+            const spinalUtils = yield (0, utils_1.init)();
+            const [zoneNodeStartNode, groupDaliStartNode] = yield (0, utils_1.getStartNodes)(spinalUtils);
             console.log("getting bmsEndpoints...");
-            const bmsEndpoints = yield spinalUtils.getBmsEndpointNode(startNode);
-            console.log(bmsEndpoints.length, "endpoint(s) found");
+            const { groupDaliNodes, modeFonctionnementNodes } = yield (0, utils_1.getBmsEndpointsNodes)(spinalUtils, groupDaliStartNode, zoneNodeStartNode);
+            console.log(groupDaliNodes.length, "nodes 'group Dali(s)' found");
+            console.log(modeFonctionnementNodes.length, "nodes 'mode fonctionnement(s)' found");
             console.log("binding...");
-            yield spinalUtils.bindEndpoints(bmsEndpoints);
+            (0, utils_1.bindEndpoints)(groupDaliNodes, modeFonctionnementNodes);
             console.log("** Done **");
+            // await spinalUtils.bindEndpoints(bmsEndpoints);
         }
         catch (error) {
             console.error(error);

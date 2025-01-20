@@ -3,20 +3,30 @@ USER_ID=""
 PASSWORD=""
 
 #hub
-PROTOCOL=""
+PROTOCOL="http"
 HOST=""
 PORT=""
 
 #Digital twin
-DIGITAL_TWIN_PATH=""
+DIGITAL_TWIN_PATH="/__users__/admin/Digital twin"
 
-#context tree
+#Endpoint context tree
 COMMAND_CONTEXT_NAME="" # obligatoire
 COMMAND_CATEGORY_NAME="" # obligatoire uniquement si COMMAND_GROUP_NAME est definie
 COMMAND_GROUP_NAME="" # pas obligatoire
 
-#bacnet
-BACNET_PRIORITY= ""
+# Zone Context Tree
+ZONE_CONTEXT_NAME=""
+ZONE_CATEGORY_NAME=""
+ZONE_GROUP_NAME=""
+
+
+# Attributes
+ATTRIBUTE_CATEGORY_NAME="default" # categorie d'attribut
+ENDPOINT_ATTRIBUTE_NAME="controlValue"
+INIT_ZONE_ATTRIBUTE="initZoneMode"
+DEFAULT_ATTRIBUTE_VALUE="null"
+
 
 NODE_TLS_REJECT_UNAUTHORIZED=0
-ORGAN_NAME = "spinal-organ-bacnet-command"
+ORGAN_NAME = "spinal-organ-opcua-command"

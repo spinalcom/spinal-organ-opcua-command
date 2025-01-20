@@ -9,20 +9,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SpinalUtils = void 0;
+exports.SpinalGraphUtils = void 0;
 const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
-const EndpointProcess_1 = require("./EndpointProcess");
 const spinal_model_bmsnetwork_1 = require("spinal-model-bmsnetwork");
-const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
 const env_1 = require("./env");
 const utils_1 = require("./utils");
-class SpinalUtils {
+class SpinalGraphUtils {
+    // public context: SpinalContext;
     constructor() {
         this._isInitialized = new Map();
     }
     static getInstance() {
         if (!this._instance)
-            this._instance = new SpinalUtils();
+            this._instance = new SpinalGraphUtils();
         return this._instance;
     }
     get graph() {
@@ -41,7 +40,7 @@ class SpinalUtils {
             const context = yield this.graph.getContext(contextName);
             if (!context)
                 throw new Error(`No context found for "${contextName}"`);
-            this.context = context;
+            // this.context = context;
             let group = null;
             let category = null;
             if (groupName && !categoryName)
@@ -56,37 +55,51 @@ class SpinalUtils {
                 if (!group)
                     throw new Error(`no group found for "${groupName}"`);
             }
-            return group || category || context;
+            return { context, startNode: group || category || context };
         });
     }
-    getBmsEndpointNode(startNode) {
+    getBmsEndpointNode(startNode, context) {
         return __awaiter(this, void 0, void 0, function* () {
-            const seen = new Set([startNode]);
-            let nextGen = [startNode];
-            let currentGen = [];
-            let found = [];
-            while (nextGen.length) {
-                currentGen = nextGen;
-                nextGen = [];
-                const promises = currentGen.map(node => {
-                    seen.add(node);
-                    return () => node.getChildrenInContext(this.context);
-                });
-                const childrenArray = yield (0, utils_1._consumeBatch)(promises, 30);
-                for (const node of childrenArray.flat()) {
-                    if (node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsEndpoint.nodeTypeName) {
-                        found.push({ directModificationDate: node.info.directModificationDate, node });
-                        continue;
-                    }
-                    if (!seen.has(node))
-                        nextGen.push(node);
-                }
-            }
-            return found;
+            const nodes = yield startNode.findInContext(context, (node) => node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsEndpoint.nodeTypeName);
+            return nodes.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
         });
     }
-    bindEndpoints(models) {
-        new EndpointProcess_1.default(models, true, utils_1._callbackMethod.bind(this));
+    // public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<(TModels & { zone: SpinalNode })[]> {
+    getZoneModeFonctionnement(startNode, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const modeF = yield startNode.findInContext(context, (node) => node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsEndpoint.nodeTypeName && node.getName().get() === "Mode fonctionnement");
+            return modeF.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
+            // const zones = await startNode.findInContext(context, (node) => /^Zone/i.test(node.getName().get()));
+            // return zones.reduce(async (listProm, zone) => {
+            //     const list = await listProm;
+            //     const children = await zone.getChildren([SpinalBmsEndpointGroup.relationName, SpinalBmsEndpoint.relationName]);
+            //     const modeF = children.find(el => el.getName().get() === "Mode de fonctionnement");
+            //     if (modeF) list.push({ directModificationDate: modeF.info.directModificationDate, node: modeF, zone });
+            //     return listProm;
+            // }, Promise.resolve([]))
+        });
+    }
+    getEndpointDataInMap(id) {
+        return this._isInitialized[id];
+    }
+    addEndpointsToMap(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = node.getId().get();
+            const { attribute, element, serverInfo } = yield this.getEndpointData(node);
+            this._isInitialized[id] = { node, attribute, element, serverInfo };
+            return this._isInitialized[id];
+            // _self._isInitialized[id] = data;
+        });
+    }
+    getEndpointData(endpointNode) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const [element, attribute, serverInfo] = yield Promise.all([
+                endpointNode.getElement(),
+                this._getEndpointControlValue(endpointNode),
+                this._getEndpointServer(endpointNode)
+            ]);
+            return { element, attribute, serverInfo };
+        });
     }
     ////////////////////////////////////////////// PRIVATES METHODS
     _getCategoryByName(context, categoryName) {
@@ -101,23 +114,10 @@ class SpinalUtils {
             return groups.find(el => el.getName().get() === groupName);
         });
     }
-    _getEndpointData(endpointNode) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const [element, attribute, serverInfo] = yield Promise.all([
-                endpointNode.getElement(),
-                this._getEndpointControlValue(endpointNode),
-                this._getEndpointServer(endpointNode)
-            ]);
-            return { element, attribute, serverInfo };
-        });
-    }
     _getEndpointControlValue(endpointNode) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { attribute_category, attribute_name, attribute_default_value } = env_1.default;
-            const [attribute] = yield spinal_env_viewer_plugin_documentation_service_1.attributeService.getAttributesByCategory(endpointNode, attribute_category, attribute_name);
-            if (attribute)
-                return attribute;
-            return spinal_env_viewer_plugin_documentation_service_1.attributeService.addAttributeByCategoryName(endpointNode, attribute_category, attribute_name, attribute_default_value);
+            const { attribute_category, endpoint_control_value_name, attribute_default_value } = env_1.default;
+            return (0, utils_1.getOrCreateAttribute)(endpointNode, attribute_category, endpoint_control_value_name, attribute_default_value);
         });
     }
     _getEndpointServer(endpointNode) {
@@ -131,6 +131,6 @@ class SpinalUtils {
         });
     }
 }
-exports.SpinalUtils = SpinalUtils;
-exports.default = SpinalUtils;
+exports.SpinalGraphUtils = SpinalGraphUtils;
+exports.default = SpinalGraphUtils;
 //# sourceMappingURL=SpinalGraphUtils.js.map

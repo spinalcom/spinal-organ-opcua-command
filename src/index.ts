@@ -1,15 +1,11 @@
 import env_data from "./services/env";
-
 import { spinalCore, FileSystem } from "spinal-core-connectorjs_type"
 import SpinalUtils from "./services/SpinalGraphUtils";
-
-import ConfigFile from "spinal-lib-organ-monitoring";
-
-const { protocol, userId, password, host, port, digitaltwin_path, context_name, category_name, group_name, organ_name } = env_data;
-const url = `${protocol}://${userId}:${password}@${host}:${port}/`;
+import { bindEndpoints, getBmsEndpointsNodes, getStartNodes, init } from "./services/utils";
 
 
-const connect = spinalCore.connect(url);
+
+
 
 
 FileSystem.onConnectionError = (code: number) => {
@@ -20,18 +16,18 @@ FileSystem.onConnectionError = (code: number) => {
 
 (async function () {
     try {
-        await ConfigFile.init(connect, organ_name, host, protocol, parseInt(port));
-        const spinalUtils = SpinalUtils.getInstance();
-        await spinalUtils.init(connect, digitaltwin_path);
-        const startNode = await spinalUtils.getStartNode(context_name, category_name, group_name);
 
+        const spinalUtils = await init();
+        const [zoneNodeStartNode, groupDaliStartNode] = await getStartNodes(spinalUtils);
         console.log("getting bmsEndpoints...")
-        const bmsEndpoints = await spinalUtils.getBmsEndpointNode(startNode);
-        console.log(bmsEndpoints.length, "endpoint(s) found");
+        const { groupDaliNodes, modeFonctionnementNodes } = await getBmsEndpointsNodes(spinalUtils, groupDaliStartNode, zoneNodeStartNode);
+        console.log(groupDaliNodes.length, "nodes 'group Dali(s)' found");
+        console.log(modeFonctionnementNodes.length, "nodes 'mode fonctionnement(s)' found");
 
         console.log("binding...")
-        await spinalUtils.bindEndpoints(bmsEndpoints);
+        bindEndpoints(groupDaliNodes, modeFonctionnementNodes);
         console.log("** Done **")
+        // await spinalUtils.bindEndpoints(bmsEndpoints);
 
 
     } catch (error) {
@@ -39,5 +35,7 @@ FileSystem.onConnectionError = (code: number) => {
         process.exit(0);
     }
 })();
+
+
 
 

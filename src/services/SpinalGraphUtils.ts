@@ -5,8 +5,10 @@ import EndpointProcess, { TModels } from "./EndpointProcess";
 import { SpinalBmsDevice, SpinalBmsEndpoint, SpinalBmsEndpointGroup, SpinalBmsNetwork } from "spinal-model-bmsnetwork";
 import { SpinalAttribute } from "spinal-models-documentation";
 import { attributeService } from "spinal-env-viewer-plugin-documentation-service";
+
 import env_data from "./env";
-import { _callbackMethod, _consumeBatch } from "./utils";
+import { getOrCreateAttribute } from "./utils";
+
 
 
 
@@ -24,17 +26,17 @@ export interface IEndpointData {
     serverInfo: IServer
 }
 
-export class SpinalUtils {
+export class SpinalGraphUtils {
     connect: spinal.FileSystem
-    private static _instance: SpinalUtils;
+    private static _instance: SpinalGraphUtils;
     private _graph: SpinalGraph;
     private _isInitialized: Map<string, IEndpointData> = new Map()
-    public context: SpinalContext;
+    // public context: SpinalContext;
 
     private constructor() { }
 
-    public static getInstance(): SpinalUtils {
-        if (!this._instance) this._instance = new SpinalUtils();
+    public static getInstance(): SpinalGraphUtils {
+        if (!this._instance) this._instance = new SpinalGraphUtils();
 
         return this._instance;
     }
@@ -53,11 +55,11 @@ export class SpinalUtils {
         });
     }
 
-    public async getStartNode(contextName: string, categoryName?: string, groupName?: string): Promise<SpinalNode> {
+    public async getStartNode(contextName: string, categoryName?: string, groupName?: string): Promise<{ context: SpinalContext, startNode: SpinalNode }> {
         const context = await this.graph.getContext(contextName);
         if (!context) throw new Error(`No context found for "${contextName}"`);
 
-        this.context = context;
+        // this.context = context;
 
         let group = null;
         let category = null;
@@ -75,45 +77,56 @@ export class SpinalUtils {
         }
 
 
-        return group || category || context;
+        return { context, startNode: group || category || context };
     }
 
 
-    public async getBmsEndpointNode(startNode: SpinalNode): Promise<TModels[]> {
-        const seen: Set<SpinalNode<any>> = new Set([startNode]);
-        let nextGen: SpinalNode[] = [startNode];
-        let currentGen: SpinalNode[] = [];
-        let found: TModels[] = [];
+    public async getBmsEndpointNode(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]> {
+        const nodes = await startNode.findInContext(context, (node) => node.getType().get() === SpinalBmsEndpoint.nodeTypeName);
 
-        while (nextGen.length) {
-            currentGen = nextGen;
-            nextGen = [];
+        return nodes.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
+    }
 
-            const promises = currentGen.map(node => {
-                seen.add(node);
-                return () => node.getChildrenInContext(this.context)
-            });
+    // public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<(TModels & { zone: SpinalNode })[]> {
+    public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]> {
 
-            const childrenArray = await _consumeBatch(promises, 30);
+        const modeF = await startNode.findInContext(context, (node) => node.getType().get() === SpinalBmsEndpoint.nodeTypeName && node.getName().get() === "Mode fonctionnement");
 
-            for (const node of childrenArray.flat()) {
-                if (node.getType().get() === SpinalBmsEndpoint.nodeTypeName) {
-                    found.push({ directModificationDate: node.info.directModificationDate, node });
-                    continue;
-                }
+        return modeF.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
+        // const zones = await startNode.findInContext(context, (node) => /^Zone/i.test(node.getName().get()));
+        // return zones.reduce(async (listProm, zone) => {
+        //     const list = await listProm;
+        //     const children = await zone.getChildren([SpinalBmsEndpointGroup.relationName, SpinalBmsEndpoint.relationName]);
+        //     const modeF = children.find(el => el.getName().get() === "Mode de fonctionnement");
 
-                if (!seen.has(node)) nextGen.push(node);
-            }
-        }
+        //     if (modeF) list.push({ directModificationDate: modeF.info.directModificationDate, node: modeF, zone });
+        //     return listProm;
+        // }, Promise.resolve([]))
+    }
 
-        return found;
+    public getEndpointDataInMap(id: string): IEndpointData | undefined {
+        return this._isInitialized[id];
+    }
+
+    public async addEndpointsToMap(node: SpinalNode): Promise<IEndpointData> {
+        const id = node.getId().get();
+        const { attribute, element, serverInfo } = await this.getEndpointData(node);
+        this._isInitialized[id] = { node, attribute, element, serverInfo };
+
+        return this._isInitialized[id];
+        // _self._isInitialized[id] = data;
     }
 
 
-    public bindEndpoints(models: TModels[]) {
-        new EndpointProcess(models, true, _callbackMethod.bind(this));
-    }
+    public async getEndpointData(endpointNode: SpinalNode): Promise<{ element: SpinalBmsEndpoint, attribute: SpinalAttribute, serverInfo: IServer }> {
+        const [element, attribute, serverInfo] = await Promise.all([
+            endpointNode.getElement(),
+            this._getEndpointControlValue(endpointNode),
+            this._getEndpointServer(endpointNode)
+        ])
 
+        return { element, attribute, serverInfo }
+    }
 
 
 
@@ -129,23 +142,11 @@ export class SpinalUtils {
         return groups.find(el => el.getName().get() === groupName);
     }
 
-    private async _getEndpointData(endpointNode: SpinalNode): Promise<{ element: SpinalBmsEndpoint, attribute: SpinalAttribute, serverInfo: IServer }> {
-        const [element, attribute, serverInfo] = await Promise.all([
-            endpointNode.getElement(),
-            this._getEndpointControlValue(endpointNode),
-            this._getEndpointServer(endpointNode)
-        ])
 
-        return { element, attribute, serverInfo }
-    }
 
     private async _getEndpointControlValue(endpointNode: SpinalNode): Promise<SpinalAttribute> {
-        const { attribute_category, attribute_name, attribute_default_value } = env_data
-
-        const [attribute] = await attributeService.getAttributesByCategory(endpointNode, attribute_category, attribute_name)
-        if (attribute) return attribute;
-
-        return attributeService.addAttributeByCategoryName(endpointNode, attribute_category, attribute_name, attribute_default_value);
+        const { attribute_category, endpoint_control_value_name, attribute_default_value } = env_data
+        return getOrCreateAttribute(endpointNode, attribute_category, endpoint_control_value_name, attribute_default_value);
     }
 
 
@@ -160,4 +161,4 @@ export class SpinalUtils {
 }
 
 
-export default SpinalUtils;
+export default SpinalGraphUtils;

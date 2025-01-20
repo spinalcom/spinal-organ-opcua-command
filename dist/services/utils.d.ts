@@ -1,7 +1,33 @@
-import { SpinalNode } from "spinal-model-graph";
+import { SpinalContext, SpinalNode } from "spinal-model-graph";
+import SpinalGraphUtils, { IEndpointData } from "./SpinalGraphUtils";
 import { DataType } from "node-opcua";
+import { TModels } from "./EndpointProcess";
+import { SpinalAttribute } from "spinal-models-documentation";
 type Consumedfunction<T> = () => Promise<T>;
-export declare function _callbackMethod(node: SpinalNode): Promise<void>;
+type INodes = {
+    context: SpinalContext;
+    startNode: SpinalNode;
+};
+export declare function init(): Promise<SpinalGraphUtils>;
+export declare function getStartNodes(spinalUtils: SpinalGraphUtils): Promise<[{
+    context: SpinalContext<any>;
+    startNode: SpinalNode<any>;
+}, {
+    context: SpinalContext<any>;
+    startNode: SpinalNode<any>;
+}]>;
+export declare function getBmsEndpointsNodes(spinalUtils: SpinalGraphUtils, groupDaliNodes: INodes, modeFonctionnement: INodes): Promise<{
+    groupDaliNodes: TModels[];
+    modeFonctionnementNodes: TModels[];
+}>;
+export declare function bindEndpoints(groupDaliEndpoints: TModels[], modeFonctionnementEndpoints: TModels[]): void;
+export declare function _bindEndpointcallback(node: SpinalNode, isModeFonctionnement?: boolean): Promise<void>;
+export declare function getInitZoneAttribute(node: SpinalNode, isModeFonctionnement: boolean): Promise<SpinalAttribute>;
+export declare function getOrCreateAttribute(node: SpinalNode, attributeCategory: string, attributeName: string, attributeValue?: any): Promise<SpinalAttribute>;
+export declare function _sendUpdateRequest(node: SpinalNode): Promise<{
+    first: boolean;
+    data: IEndpointData;
+}>;
 export declare function _consumeBatch<T>(promises: Consumedfunction<T>[], batchSize?: number): Promise<T[]>;
 export declare function getServerUrl(serverInfo: any): string;
 export declare const coerceBoolean: (data: any) => boolean;
