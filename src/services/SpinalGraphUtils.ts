@@ -152,10 +152,12 @@ export class SpinalGraphUtils {
 
     private async _getEndpointServer(endpointNode: SpinalNode): Promise<IServer> {
         const found = await endpointNode.findOneParent([SpinalBmsNetwork.relationName, SpinalBmsDevice.relationName, SpinalBmsEndpointGroup.relationName, SpinalBmsEndpoint.relationName], (node) => {
-            return node.getType().get() === SpinalBmsNetwork.nodeTypeName;
+            // return node.getType().get() === SpinalBmsNetwork.nodeTypeName;
+            return node.getType().get() === SpinalBmsDevice.nodeTypeName;
         });
 
-        if (found) return found.info?.serverInfo?.get();
+        // if (found) return found.info?.serverInfo?.get();
+        if (found) return found.info?.server?.get();
     }
 
 }

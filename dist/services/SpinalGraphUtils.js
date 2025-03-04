@@ -124,10 +124,12 @@ class SpinalGraphUtils {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const found = yield endpointNode.findOneParent([spinal_model_bmsnetwork_1.SpinalBmsNetwork.relationName, spinal_model_bmsnetwork_1.SpinalBmsDevice.relationName, spinal_model_bmsnetwork_1.SpinalBmsEndpointGroup.relationName, spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName], (node) => {
-                return node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsNetwork.nodeTypeName;
+                // return node.getType().get() === SpinalBmsNetwork.nodeTypeName;
+                return node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsDevice.nodeTypeName;
             });
+            // if (found) return found.info?.serverInfo?.get();
             if (found)
-                return (_b = (_a = found.info) === null || _a === void 0 ? void 0 : _a.serverInfo) === null || _b === void 0 ? void 0 : _b.get();
+                return (_b = (_a = found.info) === null || _a === void 0 ? void 0 : _a.server) === null || _b === void 0 ? void 0 : _b.get();
         });
     }
 }

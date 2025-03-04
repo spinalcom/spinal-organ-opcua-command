@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.coerceStringToDataType = exports.coerceFunc = exports.coerceNoop = exports.coerceNumberR = exports.coerceNumber = exports.coerceBoolean = exports.getServerUrl = exports._consumeBatch = exports._sendUpdateRequest = exports.getOrCreateAttribute = exports.getInitZoneAttribute = exports._bindEndpointcallback = exports.bindEndpoints = exports.getBmsEndpointsNodes = exports.getStartNodes = exports.init = void 0;
 const SpinalGraphUtils_1 = require("./SpinalGraphUtils");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
+const spinalPilot_1 = require("./spinalPilot");
 const node_opcua_1 = require("node-opcua");
 const env_1 = require("./env");
 const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
@@ -108,7 +109,7 @@ function _sendUpdateRequest(node) {
         const value = data.attribute.value.get();
         const nodeId = (_b = (_a = data.node.info) === null || _a === void 0 ? void 0 : _a.idNetwork) === null || _b === void 0 ? void 0 : _b.get();
         const url = getServerUrl(data.serverInfo);
-        // const res = await SpinalPilot.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
+        const res = yield spinalPilot_1.default.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
         data.element.currentValue.set(value); // change element value in graph
         return { first: false, data };
     });
