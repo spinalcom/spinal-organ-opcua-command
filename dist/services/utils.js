@@ -141,7 +141,7 @@ function getServerUrl(serverInfo) {
         endpoint = `/${endpoint}`;
     if (!endpoint.endsWith("/"))
         endpoint = endpoint.substring(0, endpoint.length - 1);
-    return `opc.tcp://${serverInfo.ip}:${serverInfo.port}${endpoint}`;
+    return `opc.tcp://${serverInfo.address}:${serverInfo.port}${endpoint}`;
 }
 exports.getServerUrl = getServerUrl;
 const coerceBoolean = (data) => {

@@ -1,28 +1,28 @@
 {
-  "name": "spinal-organ-opcua-command",
-  "version": "1.1.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "npm run build && node dist/index.js",
-    "pm2": "npm run build && pm2 start ecosystem.config.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "dotenv": "^16.4.7",
-    "node-opcua": "^2.138.1",
-    "spinal-core-connectorjs_type": "git+https://github.com/spinalcom/spinal-core-connectorjs_type.git",
-    "spinal-lib-organ-monitoring": "git+https://github.com/spinalcom/spinal-lib-organ-monitoring.git",
-    "spinal-model-bmsnetwork": "git+https://github.com/spinalcom/spinal-model-bmsnetwork.git#bacnet",
-    "spinal-model-graph": "git+https://github.com/spinalcom/spinal-model-graph.git",
-    "spinal-model-opcua": "git+https://github.com/spinalcom/spinal-model-opcua.git",
-    "spinal-models-documentation": "git+https://github.com/spinalcom/spinal-models-documentation.git"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.1"
-  }
+	"name": "spinal-organ-opcua-command",
+	"version": "1.1.1",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc",
+		"start": "npm run build && node dist/index.js",
+		"pm2": "npm run build && pm2 start ecosystem.config.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"dotenv": "^16.4.7",
+		"node-opcua": "^2.138.1",
+		"spinal-core-connectorjs_type": "git+https://github.com/spinalcom/spinal-core-connectorjs_type.git",
+		"spinal-lib-organ-monitoring": "git+https://github.com/spinalcom/spinal-lib-organ-monitoring.git",
+		"spinal-model-bmsnetwork": "git+https://github.com/spinalcom/spinal-model-bmsnetwork.git#bacnet",
+		"spinal-model-graph": "git+https://github.com/spinalcom/spinal-model-graph.git",
+		"spinal-model-opcua": "git+https://github.com/spinalcom/spinal-model-opcua.git",
+		"spinal-models-documentation": "git+https://github.com/spinalcom/spinal-models-documentation.git"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.1"
+	}
 }
