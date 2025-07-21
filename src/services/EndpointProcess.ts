@@ -10,7 +10,7 @@ export class EndpointProcess extends Process {
     private models: TModels[];
     private _callback: TCallback;
 
-    constructor(models: TModels[], call_onchange_on_construction: boolean, callback: TCallback) {
+    constructor(models: TModels[], callback: TCallback, call_onchange_on_construction: boolean = false) {
         super(models.map(el => el.directModificationDate), call_onchange_on_construction);
         this.models = models;
         this._callback = callback;

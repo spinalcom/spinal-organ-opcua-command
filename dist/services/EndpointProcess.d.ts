@@ -9,7 +9,7 @@ export declare class EndpointProcess extends Process {
     static _constructorName: string;
     private models;
     private _callback;
-    constructor(models: TModels[], call_onchange_on_construction: boolean, callback: TCallback);
+    constructor(models: TModels[], callback: TCallback, call_onchange_on_construction?: boolean);
     onchange(): void;
 }
 export default EndpointProcess;

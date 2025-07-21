@@ -54,8 +54,8 @@ exports.getBmsEndpointsNodes = getBmsEndpointsNodes;
 //                             Bind Endpoints                          //
 /////////////////////////////////////////////////////////////////////////
 function bindEndpoints(groupDaliEndpoints, modeFonctionnementEndpoints) {
-    new EndpointProcess_1.default(groupDaliEndpoints, true, (node) => _bindEndpointcallback(node, false));
-    new EndpointProcess_1.default(modeFonctionnementEndpoints, true, (node) => _bindEndpointcallback(node, true));
+    new EndpointProcess_1.default(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false));
+    new EndpointProcess_1.default(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true));
 }
 exports.bindEndpoints = bindEndpoints;
 function _bindEndpointcallback(node, isModeFonctionnement = false) {

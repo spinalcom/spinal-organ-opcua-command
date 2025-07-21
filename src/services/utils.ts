@@ -58,8 +58,8 @@ export async function getBmsEndpointsNodes(spinalUtils: SpinalGraphUtils, groupD
 
 
 export function bindEndpoints(groupDaliEndpoints: TModels[], modeFonctionnementEndpoints: TModels[]) {
-    new EndpointProcess(groupDaliEndpoints, true, (node) => _bindEndpointcallback(node, false));
-    new EndpointProcess(modeFonctionnementEndpoints, true, (node) => _bindEndpointcallback(node, true));
+    new EndpointProcess(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false));
+    new EndpointProcess(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true));
 }
 
 
