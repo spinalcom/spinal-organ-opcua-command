@@ -145,7 +145,8 @@ export function getServerUrl(serverInfo: any): string {
     if (!endpoint.startsWith("/")) endpoint = `/${endpoint}`;
     if (!endpoint.endsWith("/")) endpoint = endpoint.substring(0, endpoint.length - 1);
 
-    return `opc.tcp://${serverInfo.address}:${serverInfo.port}${endpoint}`;
+    const ip = serverInfo.address || serverInfo.ip;
+    return `opc.tcp://${ip}:${serverInfo.port}${endpoint}`;
 }
 
 
