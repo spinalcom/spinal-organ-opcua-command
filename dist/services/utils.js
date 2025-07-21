@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.coerceStringToDataType = exports.coerceFunc = exports.coerceNoop = exports.coerceNumberR = exports.coerceNumber = exports.coerceBoolean = exports.getServerUrl = exports._consumeBatch = exports._sendUpdateRequest = exports.getOrCreateAttribute = exports.getInitZoneAttribute = exports._bindEndpointcallback = exports.bindEndpoints = exports.getBmsEndpointsNodes = exports.getStartNodes = exports.init = void 0;
+exports.coerceStringToDataType = exports.coerceFunc = exports.coerceNoop = exports.coerceNumberR = exports.coerceNumber = exports.coerceBoolean = exports.getServerUrl = exports._consumeBatch = exports._sendUpdateRequest = exports.addAEndpointsToMap = exports.getOrCreateAttribute = exports.getInitZoneAttribute = exports._bindEndpointcallback = exports.bindEndpoints = exports.getBmsEndpointsNodes = exports.getStartNodes = exports.init = void 0;
 const SpinalGraphUtils_1 = require("./SpinalGraphUtils");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
 const spinalPilot_1 = require("./spinalPilot");
@@ -44,8 +44,8 @@ function getBmsEndpointsNodes(spinalUtils, groupDaliNodes, modeFonctionnement) {
     return __awaiter(this, void 0, void 0, function* () {
         const groupDaliProm = spinalUtils.getBmsEndpointNode(groupDaliNodes.startNode, groupDaliNodes.context);
         const modeFonctionnementProm = spinalUtils.getZoneModeFonctionnement(modeFonctionnement.startNode, modeFonctionnement.context);
-        return Promise.all([groupDaliProm, modeFonctionnementProm]).then((result) => {
-            return { groupDaliNodes: result[0], modeFonctionnementNodes: result[1] };
+        return Promise.all([groupDaliProm, modeFonctionnementProm]).then(([groupDaliNodes, modeFonctionnementNodes]) => {
+            return { groupDaliNodes, modeFonctionnementNodes };
         });
     });
 }
@@ -62,9 +62,9 @@ function _bindEndpointcallback(node, isModeFonctionnement = false) {
     return __awaiter(this, void 0, void 0, function* () {
         let initZoneAttribute = yield getInitZoneAttribute(node, isModeFonctionnement);
         try {
-            const { first, data } = yield _sendUpdateRequest(node);
-            if (first)
-                return;
+            // const { first, data } = await _sendUpdateRequest(node);
+            // if (first) return;
+            yield _sendUpdateRequest(node);
             if (initZoneAttribute)
                 initZoneAttribute.value.set("1");
             console.log(`[${node._server_id}] - [${node.getName().get()}] - updated successfully`);
@@ -95,15 +95,30 @@ function getOrCreateAttribute(node, attributeCategory, attributeName, attributeV
     });
 }
 exports.getOrCreateAttribute = getOrCreateAttribute;
+function addAEndpointsToMap(nodes) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!Array.isArray(nodes))
+            nodes = [nodes];
+        const spinalUtils = SpinalGraphUtils_1.default.getInstance();
+        const promises = nodes.map((node) => spinalUtils.addEndpointsToMap(node));
+        const result = yield Promise.allSettled(promises);
+        return result
+            .filter((res) => res.status === "fulfilled")
+            .map((res) => res.value);
+    });
+}
+exports.addAEndpointsToMap = addAEndpointsToMap;
+// export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
 function _sendUpdateRequest(node) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        const _self = SpinalGraphUtils_1.default.getInstance();
+        const graphUtils = SpinalGraphUtils_1.default.getInstance();
         const id = node.getId().get();
-        let data = _self.getEndpointDataInMap(id);
+        let data = graphUtils.getEndpointDataInMap(id);
         // this condition is only true on initialization
+        // if (!data) return { first: true, data: await graphUtils.addEndpointsToMap(node) };
         if (!data)
-            return { first: true, data: yield _self.addEndpointsToMap(node) };
+            throw `node ${id} is not found in the map`;
         if (!data.serverInfo)
             throw `this node is not link to an opcua network context`;
         const value = data.attribute.value.get();
@@ -111,7 +126,7 @@ function _sendUpdateRequest(node) {
         const url = getServerUrl(data.serverInfo);
         const res = yield spinalPilot_1.default.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
         data.element.currentValue.set(value); // change element value in graph
-        return { first: false, data };
+        return data;
     });
 }
 exports._sendUpdateRequest = _sendUpdateRequest;
@@ -141,7 +156,8 @@ function getServerUrl(serverInfo) {
         endpoint = `/${endpoint}`;
     if (!endpoint.endsWith("/"))
         endpoint = endpoint.substring(0, endpoint.length - 1);
-    return `opc.tcp://${serverInfo.address}:${serverInfo.port}${endpoint}`;
+    const ip = serverInfo.address || serverInfo.ip;
+    return `opc.tcp://${ip}:${serverInfo.port}${endpoint}`;
 }
 exports.getServerUrl = getServerUrl;
 const coerceBoolean = (data) => {

@@ -172,16 +172,44 @@ class OPCUAService extends events_1.EventEmitter {
             }
         });
     }
+    _getDataType(nodeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const dataTypeId = (0, node_opcua_1.resolveNodeId)(nodeId);
+                const dataType = yield (0, node_opcua_1.findBasicDataType)(this.session, dataTypeId);
+                return dataType;
+            }
+            catch (error) {
+                return this.detectOPCUAValueType(nodeId);
+            }
+        });
+    }
     _getNodesDetails(nodeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const dataTypeIdDataValue = yield this.session.read({ nodeId, attributeId: node_opcua_1.AttributeIds.DataType });
-            const arrayDimensionDataValue = yield this.session.read({ nodeId, attributeId: node_opcua_1.AttributeIds.ArrayDimensions });
-            const valueRankDataValue = yield this.session.read({ nodeId, attributeId: node_opcua_1.AttributeIds.ValueRank });
-            const dataTypeId = dataTypeIdDataValue.value.value;
-            const dataType = yield (0, node_opcua_1.findBasicDataType)(this.session, dataTypeId);
+            const arrayDimensionDataValue = yield this.session.read({ nodeId: nodeId, attributeId: node_opcua_1.AttributeIds.ArrayDimensions });
+            const valueRankDataValue = yield this.session.read({ nodeId: nodeId, attributeId: node_opcua_1.AttributeIds.ValueRank });
             const arrayDimension = arrayDimensionDataValue.value.value;
             const valueRank = valueRankDataValue.value.value;
+            const dataType = yield this._getDataType(nodeId.toString());
             return { dataType, arrayDimension, valueRank };
+        });
+    }
+    detectOPCUAValueType(nodeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const resValue = yield this.readNode({ nodeId: (0, node_opcua_1.coerceNodeId)(nodeId) });
+            if (!resValue && !resValue[0]) {
+                const valuesFormatted = this._formatDataValue(resValue[0]);
+                if (valuesFormatted && valuesFormatted.dataType)
+                    return node_opcua_1.DataType[valuesFormatted.dataType];
+                return node_opcua_1.DataType[typeof valuesFormatted.value];
+            }
+        });
+    }
+    readNode(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!Array.isArray(node))
+                node = [node];
+            return this.session.read(node);
         });
     }
     ///////////////////////////////////////////////////////
@@ -206,6 +234,27 @@ class OPCUAService extends events_1.EventEmitter {
         else {
             return data.map((d) => c(d));
         }
+    }
+    _formatDataValue(dataValue) {
+        var _a, _b, _c, _d, _e;
+        // if (dataValue?.statusCode == StatusCodes.Good) {
+        if (typeof ((_a = dataValue === null || dataValue === void 0 ? void 0 : dataValue.value) === null || _a === void 0 ? void 0 : _a.value) !== "undefined") {
+            const obj = { dataType: node_opcua_1.DataType[(_b = dataValue === null || dataValue === void 0 ? void 0 : dataValue.value) === null || _b === void 0 ? void 0 : _b.dataType], value: undefined };
+            switch ((_c = dataValue === null || dataValue === void 0 ? void 0 : dataValue.value) === null || _c === void 0 ? void 0 : _c.arrayType) {
+                case node_opcua_1.VariantArrayType.Scalar:
+                    obj.value = (_d = dataValue === null || dataValue === void 0 ? void 0 : dataValue.value) === null || _d === void 0 ? void 0 : _d.value;
+                    break;
+                case node_opcua_1.VariantArrayType.Array:
+                    obj.value = (_e = dataValue === null || dataValue === void 0 ? void 0 : dataValue.value) === null || _e === void 0 ? void 0 : _e.value.join(",");
+                    break;
+                default:
+                    obj.value = null;
+                    break;
+            }
+            return obj;
+        }
+        //}
+        return null;
     }
 }
 exports.OPCUAService = OPCUAService;

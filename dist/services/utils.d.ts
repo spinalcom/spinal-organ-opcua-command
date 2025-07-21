@@ -24,10 +24,8 @@ export declare function bindEndpoints(groupDaliEndpoints: TModels[], modeFonctio
 export declare function _bindEndpointcallback(node: SpinalNode, isModeFonctionnement?: boolean): Promise<void>;
 export declare function getInitZoneAttribute(node: SpinalNode, isModeFonctionnement: boolean): Promise<SpinalAttribute>;
 export declare function getOrCreateAttribute(node: SpinalNode, attributeCategory: string, attributeName: string, attributeValue?: any): Promise<SpinalAttribute>;
-export declare function _sendUpdateRequest(node: SpinalNode): Promise<{
-    first: boolean;
-    data: IEndpointData;
-}>;
+export declare function addAEndpointsToMap(nodes: SpinalNode | SpinalNode[]): Promise<IEndpointData[]>;
+export declare function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointData>;
 export declare function _consumeBatch<T>(promises: Consumedfunction<T>[], batchSize?: number): Promise<T[]>;
 export declare function getServerUrl(serverInfo: any): string;
 export declare const coerceBoolean: (data: any) => boolean;

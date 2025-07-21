@@ -7,7 +7,6 @@ import env_data from "./env";
 import { spinalCore } from "spinal-core-connectorjs_type";
 import ConfigFile from "spinal-lib-organ-monitoring";
 import EndpointProcess, { TModels } from "./EndpointProcess";
-import { send } from "process";
 import { SpinalAttribute } from "spinal-models-documentation";
 
 
@@ -47,8 +46,8 @@ export async function getBmsEndpointsNodes(spinalUtils: SpinalGraphUtils, groupD
     const groupDaliProm = spinalUtils.getBmsEndpointNode(groupDaliNodes.startNode, groupDaliNodes.context);
     const modeFonctionnementProm = spinalUtils.getZoneModeFonctionnement(modeFonctionnement.startNode, modeFonctionnement.context);
 
-    return Promise.all([groupDaliProm, modeFonctionnementProm]).then((result) => {
-        return { groupDaliNodes: result[0], modeFonctionnementNodes: result[1] };
+    return Promise.all([groupDaliProm, modeFonctionnementProm]).then(([groupDaliNodes, modeFonctionnementNodes]) => {
+        return { groupDaliNodes, modeFonctionnementNodes };
     })
 }
 
@@ -69,8 +68,9 @@ export async function _bindEndpointcallback(node: SpinalNode, isModeFonctionneme
     let initZoneAttribute = await getInitZoneAttribute(node, isModeFonctionnement);
 
     try {
-        const { first, data } = await _sendUpdateRequest(node);
-        if (first) return;
+        // const { first, data } = await _sendUpdateRequest(node);
+        // if (first) return;
+        await _sendUpdateRequest(node);
         if (initZoneAttribute) initZoneAttribute.value.set("1");
 
         console.log(`[${node._server_id}] - [${node.getName().get()}] - updated successfully`);
@@ -96,15 +96,28 @@ export async function getOrCreateAttribute(node: SpinalNode, attributeCategory: 
     return attributeService.addAttributeByCategoryName(node, attributeCategory, attributeName, attributeValue);
 }
 
-export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
+export async function addAEndpointsToMap(nodes: SpinalNode | SpinalNode[]): Promise<IEndpointData[]> {
+    if (!Array.isArray(nodes)) nodes = [nodes];
 
-    const _self = SpinalGraphUtils.getInstance();
+    const spinalUtils = SpinalGraphUtils.getInstance();
+    const promises = nodes.map((node: SpinalNode) => spinalUtils.addEndpointsToMap(node));
+    const result = await Promise.allSettled(promises);
+
+    return result
+        .filter((res) => res.status === "fulfilled")
+        .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
+}
+
+// export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
+export async function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointData> {
+
+    const graphUtils = SpinalGraphUtils.getInstance();
     const id = node.getId().get();
-    let data: IEndpointData = _self.getEndpointDataInMap(id);
+    let data: IEndpointData = graphUtils.getEndpointDataInMap(id);
 
     // this condition is only true on initialization
-    if (!data) return { first: true, data: await _self.addEndpointsToMap(node) };
-
+    // if (!data) return { first: true, data: await graphUtils.addEndpointsToMap(node) };
+    if (!data) throw `node ${id} is not found in the map`;
     if (!data.serverInfo) throw `this node is not link to an opcua network context`;
 
 
@@ -115,7 +128,8 @@ export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boo
     const res = await SpinalPilot.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
     data.element.currentValue.set(value); // change element value in graph
 
-    return { first: false, data };
+    return data;
+    // return { first: false, data };
 }
 
 export async function _consumeBatch<T>(promises: Consumedfunction<T>[], batchSize = 10): Promise<T[]> {
