@@ -178,7 +178,9 @@ export class OPCUAService extends EventEmitter {
                 const dataType = PossibleDataType.shift();
                 if (!dataType) throw new Error("No data type found for value: " + value);
 
-                statusCode = await (this.session as any).writeSingleNode(nodeId.toString(), { dataType, value });
+                let tempValue = value;
+                if (dataType == DataType.Boolean) tempValue = value == 0 ? false : true; // convert 1 and 0 to boolean
+                statusCode = await (this.session as any).writeSingleNode(nodeId.toString(), { dataType, value: tempValue });
 
                 if (statusCode.isGoodish()) isGood = true;
 
