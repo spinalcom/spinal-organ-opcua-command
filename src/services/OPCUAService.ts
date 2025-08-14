@@ -6,7 +6,8 @@ import {
     Variant, WriteValue, coerceBoolean,
     resolveNodeId,
     coerceNodeId,
-    DataValue
+    DataValue,
+    StatusCode
 } from "node-opcua";
 
 import { EventEmitter } from "events";
@@ -164,37 +165,77 @@ export class OPCUAService extends EventEmitter {
             await this._createSession();
         }
 
-        const { dataType, arrayDimension, valueRank } = await this._getNodesDetails(nodeId);
+        // const { dataType, arrayDimension, valueRank } = await this._getNodesDetails(node);
 
-        if (dataType) {
-            try {
-                const _value = this._parseValue(valueRank, arrayDimension, dataType, value);
+        const PossibleDataType = await this._getDataType(value);
 
-                const writeValue = new WriteValue({
-                    nodeId,
-                    attributeId: AttributeIds.Value,
-                    value: { value: _value },
-                });
+        try {
 
-                let statusCode = await this.session.write(writeValue);
+            let statusCode: StatusCode;
+            let isGood: boolean = false; // check we found a data type
 
-                return statusCode;
-            } catch (error) {
-                console.log("error writing value", error);
-                return StatusCodes.BadInternalError;
+            while (!isGood && PossibleDataType.length) {
+                const dataType = PossibleDataType.shift();
+                if (!dataType) throw new Error("No data type found for value: " + value);
+
+                statusCode = await (this.session as any).writeSingleNode(nodeId.toString(), { dataType, value });
+
+                if (statusCode.isGoodish()) isGood = true;
+
             }
+
+            return StatusCodes;
+
+
+            // const _value = this._parseValue(valueRank, arrayDimension, dataType, value);
+            // console.log("Value in writeNode() => ", _value);
+            // const writeValue = new WriteValue({
+            // 	nodeId: node.nodeId,
+            // 	attributeId: AttributeIds.Value,
+            // 	value: { value: _value },
+            // });
+
+            // let statusCode = await this.session.write(writeValue);
+
+            // return statusCode;
+        } catch (error) {
+            console.log("error writing value", error);
+            return StatusCodes.BadInternalError;
         }
     }
 
-    private async _getDataType(nodeId: string): Promise<DataType | undefined> {
-        try {
-            const dataTypeId = resolveNodeId(nodeId);
-            const dataType = await findBasicDataType(this.session, dataTypeId);
-            return dataType;
-        } catch (error) {
-            return this.detectOPCUAValueType(nodeId);
+    private _getDataType(value: any): DataType[] {
+        // try {
+        // 	const dataTypeId = resolveNodeId(nodeId);
+        // 	const dataType = await findBasicDataType(this.session, dataTypeId);
+        // 	return dataType;
+        // } catch (error) {
+        // 	return this.detectOPCUAValueType(nodeId);
+        // }
+
+        if (!isNaN(value)) {
+            const numerics = [DataType.Float, DataType.Double, DataType.Int16, DataType.Int32, DataType.Int64, DataType.UInt16, DataType.UInt32, DataType.UInt64]
+            if (value == 0 || value == 1)
+                return [...numerics, DataType.Boolean]; // if the value is 0 or 1, it can be a boolean or a numeric type
+
+            return numerics; // if the value is a number, it can be a numeric type
         }
 
+        if (typeof value == "string") {
+            return [DataType.String, DataType.LocalizedText, DataType.XmlElement]; // if the value is a string, it can be a string or a localized text
+        }
+
+
+        if (typeof value == "boolean") {
+            return [DataType.Boolean];
+        }
+
+        if (value instanceof Date) {
+            return [DataType.DateTime];
+        }
+
+
+        return [DataType.Null]; // if the value is not recognized, return null
     }
 
 
@@ -254,27 +295,36 @@ export class OPCUAService extends EventEmitter {
         }
     }
 
-    private _formatDataValue(dataValue: DataValue): { value: any; dataType: string } {
+    private _formatDataValue(dataValue: any): { value: any; dataType: string } {
 
-        // if (dataValue?.statusCode == StatusCodes.Good) {
+        // if dataValue.value is a Variant return the value of the Variant
         if (typeof dataValue?.value?.value !== "undefined") {
             const obj = { dataType: DataType[dataValue?.value?.dataType], value: undefined };
 
             switch (dataValue?.value?.arrayType) {
-                case VariantArrayType.Scalar:
+                /*case VariantArrayType.Scalar:
                     obj.value = dataValue?.value?.value;
                     break;
+                    */
                 case VariantArrayType.Array:
                     obj.value = dataValue?.value?.value.join(",");
                     break;
                 default:
-                    obj.value = null;
+                    let value = dataValue?.value?.value;
+                    if (value == null) value = "null";
+
+                    obj.value = value;
                     break;
             }
 
             return obj;
         }
-        //}
+
+        // if dataValue.value is not a Variant, return the value and dataType
+        if (typeof dataValue.value !== "object") {
+            if (dataValue.value == null) dataValue.value = "null";
+            return dataValue;
+        }
 
         return null;
     }
