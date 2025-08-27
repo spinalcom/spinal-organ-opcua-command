@@ -80,7 +80,7 @@ function _bindEndpointcallback(node_1) {
                 nodeBindedForTheFirstTime[node.getId().get()] = true;
                 return; // avoid multiple call on the same node}
             }
-            // await _sendUpdateRequest(node);
+            yield _sendUpdateRequest(node);
             if (initZoneAttribute)
                 initZoneAttribute.value.set("1");
             console.log(`[${node._server_id}] - [${node.getName().get()}] - updated successfully`);
