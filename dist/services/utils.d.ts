@@ -10,11 +10,11 @@ type INodes = {
 };
 export declare function init(): Promise<SpinalGraphUtils>;
 export declare function getStartNodes(spinalUtils: SpinalGraphUtils): Promise<[{
-    context: SpinalContext<any>;
-    startNode: SpinalNode<any>;
+    context: SpinalContext;
+    startNode: SpinalNode;
 }, {
-    context: SpinalContext<any>;
-    startNode: SpinalNode<any>;
+    context: SpinalContext;
+    startNode: SpinalNode;
 }]>;
 export declare function getBmsEndpointsNodes(spinalUtils: SpinalGraphUtils, groupDaliNodes: INodes, modeFonctionnement: INodes): Promise<{
     groupDaliNodes: TModels[];

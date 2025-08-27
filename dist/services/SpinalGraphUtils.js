@@ -67,7 +67,7 @@ class SpinalGraphUtils {
     // public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<(TModels & { zone: SpinalNode })[]> {
     getZoneModeFonctionnement(startNode, context) {
         return __awaiter(this, void 0, void 0, function* () {
-            const modeF = yield startNode.findInContext(context, (node) => node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsEndpoint.nodeTypeName && node.getName().get() === "Mode fonctionnement");
+            const modeF = yield startNode.findInContext(context, (node) => node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsEndpoint.nodeTypeName);
             return modeF.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
             // const zones = await startNode.findInContext(context, (node) => /^Zone/i.test(node.getName().get()));
             // return zones.reduce(async (listProm, zone) => {
@@ -79,8 +79,14 @@ class SpinalGraphUtils {
             // }, Promise.resolve([]))
         });
     }
-    getEndpointDataInMap(id) {
-        return this._isInitialized[id];
+    getEndpointDataInMap(node) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = node.getId().get();
+            const data = this._isInitialized[id];
+            if (data)
+                return data;
+            return this.addEndpointsToMap(node);
+        });
     }
     addEndpointsToMap(node) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -121,8 +127,8 @@ class SpinalGraphUtils {
         });
     }
     _getEndpointServer(endpointNode) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const found = yield endpointNode.findOneParent([spinal_model_bmsnetwork_1.SpinalBmsNetwork.relationName, spinal_model_bmsnetwork_1.SpinalBmsDevice.relationName, spinal_model_bmsnetwork_1.SpinalBmsEndpointGroup.relationName, spinal_model_bmsnetwork_1.SpinalBmsEndpoint.relationName], (node) => {
                 // return node.getType().get() === SpinalBmsNetwork.nodeTypeName;
                 return node.getType().get() === spinal_model_bmsnetwork_1.SpinalBmsDevice.nodeTypeName;

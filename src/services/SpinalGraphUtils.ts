@@ -88,7 +88,7 @@ export class SpinalGraphUtils {
     // public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<(TModels & { zone: SpinalNode })[]> {
     public async getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]> {
 
-        const modeF = await startNode.findInContext(context, (node) => node.getType().get() === SpinalBmsEndpoint.nodeTypeName && node.getName().get() === "Mode fonctionnement");
+        const modeF = await startNode.findInContext(context, (node) => node.getType().get() === SpinalBmsEndpoint.nodeTypeName);
 
         return modeF.map(el => ({ directModificationDate: el.info.directModificationDate, node: el }));
         // const zones = await startNode.findInContext(context, (node) => /^Zone/i.test(node.getName().get()));
@@ -102,8 +102,12 @@ export class SpinalGraphUtils {
         // }, Promise.resolve([]))
     }
 
-    public getEndpointDataInMap(id: string): IEndpointData | undefined {
-        return this._isInitialized[id];
+    public async getEndpointDataInMap(node: SpinalNode): Promise<IEndpointData | undefined> {
+        const id = node.getId().get();
+        const data = this._isInitialized[id];
+        if(data) return data;
+
+        return this.addEndpointsToMap(node);
     }
 
     public async addEndpointsToMap(node: SpinalNode): Promise<IEndpointData> {

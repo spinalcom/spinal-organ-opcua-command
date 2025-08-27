@@ -29,7 +29,7 @@ export declare class SpinalGraphUtils {
     }>;
     getBmsEndpointNode(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]>;
     getZoneModeFonctionnement(startNode: SpinalNode, context: SpinalContext): Promise<TModels[]>;
-    getEndpointDataInMap(id: string): IEndpointData | undefined;
+    getEndpointDataInMap(node: SpinalNode): Promise<IEndpointData | undefined>;
     addEndpointsToMap(node: SpinalNode): Promise<IEndpointData>;
     getEndpointData(endpointNode: SpinalNode): Promise<{
         element: SpinalBmsEndpoint;

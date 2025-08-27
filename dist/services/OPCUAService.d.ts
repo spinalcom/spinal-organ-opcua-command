@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { UserIdentityInfo, NodeId, DataValue } from "node-opcua";
 import { EventEmitter } from "events";
 export declare class OPCUAService extends EventEmitter {

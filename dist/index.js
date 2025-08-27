@@ -24,9 +24,9 @@ spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (code) => {
             const { groupDaliNodes, modeFonctionnementNodes } = yield (0, utils_1.getBmsEndpointsNodes)(spinalUtils, groupDaliStartNode, zoneNodeStartNode);
             console.log(groupDaliNodes.length, "nodes 'group Dali(s)' found");
             console.log(modeFonctionnementNodes.length, "nodes 'mode fonctionnement(s)' found");
-            console.log("initiate endpoints and add them to map...");
-            const allNodes = groupDaliNodes.concat(modeFonctionnementNodes).map((el) => el.node);
-            yield (0, utils_1.addAEndpointsToMap)(allNodes);
+            // console.log("initiate endpoints and add them to map...");
+            // const allNodes = groupDaliNodes.concat(modeFonctionnementNodes).map((el) => el.node);
+            // await addAEndpointsToMap(allNodes);
             console.log("Endpoint initilized");
             console.log("binding endpoints...");
             (0, utils_1.bindEndpoints)(groupDaliNodes, modeFonctionnementNodes);

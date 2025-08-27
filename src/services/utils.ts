@@ -17,6 +17,9 @@ type INodes = {
 };
 
 
+const nodeBindedForTheFirstTime: { [key: string]: boolean } = {};
+
+
 
 
 
@@ -58,18 +61,28 @@ export async function getBmsEndpointsNodes(spinalUtils: SpinalGraphUtils, groupD
 
 
 export function bindEndpoints(groupDaliEndpoints: TModels[], modeFonctionnementEndpoints: TModels[]) {
-    new EndpointProcess(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false));
-    new EndpointProcess(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true));
+    const executeCallbackOnConstruct = true; // false does not work, it's why it's true
+    new EndpointProcess(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false), executeCallbackOnConstruct);
+    new EndpointProcess(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true), executeCallbackOnConstruct);
 }
 
 
 export async function _bindEndpointcallback(node: SpinalNode, isModeFonctionnement: boolean = false) {
 
-    let initZoneAttribute = await getInitZoneAttribute(node, isModeFonctionnement);
-
+    let initZoneAttribute = await getInitZoneAttribute(node, isModeFonctionnement); // call to create the attribute if not exist
+    
     try {
-        // const { first, data } = await _sendUpdateRequest(node);
-        // if (first) return;
+        
+        const itsFirstTime = !nodeBindedForTheFirstTime[node.getId().get()];
+        
+        // on first time, just set the flag to true and return
+        // because the bind is executed on the initialization of the EndpointProcess
+        if (itsFirstTime) {
+            console.log(`[${node._server_id}] - [${node.getName().get()}] - binded`);
+            nodeBindedForTheFirstTime[node.getId().get()] = true;   
+            return; // avoid multiple call on the same node}
+        }
+
         await _sendUpdateRequest(node);
         if (initZoneAttribute) initZoneAttribute.value.set("1");
 
@@ -100,20 +113,24 @@ export async function addAEndpointsToMap(nodes: SpinalNode | SpinalNode[]): Prom
     if (!Array.isArray(nodes)) nodes = [nodes];
 
     const spinalUtils = SpinalGraphUtils.getInstance();
-    const promises = nodes.map((node: SpinalNode) => spinalUtils.addEndpointsToMap(node));
-    const result = await Promise.allSettled(promises);
+    const result = await _consumeBatch(nodes.map((node: SpinalNode) => () => spinalUtils.addEndpointsToMap(node)), 50);
+    return result;
+    // const promises = nodes.map((node: SpinalNode) => spinalUtils.addEndpointsToMap(node));
+    // const result = await Promise.allSettled(promises);
 
-    return result
-        .filter((res) => res.status === "fulfilled")
-        .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
-}
+    // return result
+        // .filter((res) => res.status === "fulfilled")
+        // .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
+
+
+    }
 
 // export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
 export async function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointData> {
 
     const graphUtils = SpinalGraphUtils.getInstance();
     const id = node.getId().get();
-    let data: IEndpointData = graphUtils.getEndpointDataInMap(id);
+    let data: IEndpointData = await graphUtils.getEndpointDataInMap(node);
 
     // this condition is only true on initialization
     // if (!data) return { first: true, data: await graphUtils.addEndpointsToMap(node) };

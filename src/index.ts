@@ -2,11 +2,6 @@ import env_data from "./services/env";
 import { spinalCore, FileSystem } from "spinal-core-connectorjs_type"
 import SpinalUtils from "./services/SpinalGraphUtils";
 import { addAEndpointsToMap, bindEndpoints, getBmsEndpointsNodes, getStartNodes, init } from "./services/utils";
-import { all } from "axios";
-
-
-
-
 
 
 FileSystem.onConnectionError = (code: number) => {
@@ -27,9 +22,9 @@ FileSystem.onConnectionError = (code: number) => {
         console.log(groupDaliNodes.length, "nodes 'group Dali(s)' found");
         console.log(modeFonctionnementNodes.length, "nodes 'mode fonctionnement(s)' found");
 
-        console.log("initiate endpoints and add them to map...");
-        const allNodes = groupDaliNodes.concat(modeFonctionnementNodes).map((el) => el.node);
-        await addAEndpointsToMap(allNodes);
+        // console.log("initiate endpoints and add them to map...");
+        // const allNodes = groupDaliNodes.concat(modeFonctionnementNodes).map((el) => el.node);
+        // await addAEndpointsToMap(allNodes);
         console.log("Endpoint initilized");
 
         console.log("binding endpoints...")

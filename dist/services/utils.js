@@ -9,7 +9,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.coerceStringToDataType = exports.coerceFunc = exports.coerceNoop = exports.coerceNumberR = exports.coerceNumber = exports.coerceBoolean = exports.getServerUrl = exports._consumeBatch = exports._sendUpdateRequest = exports.addAEndpointsToMap = exports.getOrCreateAttribute = exports.getInitZoneAttribute = exports._bindEndpointcallback = exports.bindEndpoints = exports.getBmsEndpointsNodes = exports.getStartNodes = exports.init = void 0;
+exports.coerceFunc = exports.coerceNoop = exports.coerceNumberR = exports.coerceNumber = exports.coerceBoolean = void 0;
+exports.init = init;
+exports.getStartNodes = getStartNodes;
+exports.getBmsEndpointsNodes = getBmsEndpointsNodes;
+exports.bindEndpoints = bindEndpoints;
+exports._bindEndpointcallback = _bindEndpointcallback;
+exports.getInitZoneAttribute = getInitZoneAttribute;
+exports.getOrCreateAttribute = getOrCreateAttribute;
+exports.addAEndpointsToMap = addAEndpointsToMap;
+exports._sendUpdateRequest = _sendUpdateRequest;
+exports._consumeBatch = _consumeBatch;
+exports.getServerUrl = getServerUrl;
+exports.coerceStringToDataType = coerceStringToDataType;
 const SpinalGraphUtils_1 = require("./SpinalGraphUtils");
 const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
 const spinalPilot_1 = require("./spinalPilot");
@@ -18,6 +30,7 @@ const env_1 = require("./env");
 const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
 const spinal_lib_organ_monitoring_1 = require("spinal-lib-organ-monitoring");
 const EndpointProcess_1 = require("./EndpointProcess");
+const nodeBindedForTheFirstTime = {};
 /////////////////////////////////////////////////////////////////////////
 //                             Nodes                                   //
 /////////////////////////////////////////////////////////////////////////
@@ -31,7 +44,6 @@ function init() {
         return spinalUtils;
     });
 }
-exports.init = init;
 function getStartNodes(spinalUtils) {
     return __awaiter(this, void 0, void 0, function* () {
         const endpointStartNodeProm = spinalUtils.getStartNode(env_1.default.command_context_name, env_1.default.command_category_name, env_1.default.command_group_name);
@@ -39,7 +51,6 @@ function getStartNodes(spinalUtils) {
         return Promise.all([zoneStartNodeProm, endpointStartNodeProm]);
     });
 }
-exports.getStartNodes = getStartNodes;
 function getBmsEndpointsNodes(spinalUtils, groupDaliNodes, modeFonctionnement) {
     return __awaiter(this, void 0, void 0, function* () {
         const groupDaliProm = spinalUtils.getBmsEndpointNode(groupDaliNodes.startNode, groupDaliNodes.context);
@@ -49,22 +60,27 @@ function getBmsEndpointsNodes(spinalUtils, groupDaliNodes, modeFonctionnement) {
         });
     });
 }
-exports.getBmsEndpointsNodes = getBmsEndpointsNodes;
 /////////////////////////////////////////////////////////////////////////
 //                             Bind Endpoints                          //
 /////////////////////////////////////////////////////////////////////////
 function bindEndpoints(groupDaliEndpoints, modeFonctionnementEndpoints) {
-    new EndpointProcess_1.default(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false));
-    new EndpointProcess_1.default(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true));
+    const executeCallbackOnConstruct = true; // false does not work, it's why it's true
+    new EndpointProcess_1.default(groupDaliEndpoints, (node) => _bindEndpointcallback(node, false), executeCallbackOnConstruct);
+    new EndpointProcess_1.default(modeFonctionnementEndpoints, (node) => _bindEndpointcallback(node, true), executeCallbackOnConstruct);
 }
-exports.bindEndpoints = bindEndpoints;
-function _bindEndpointcallback(node, isModeFonctionnement = false) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let initZoneAttribute = yield getInitZoneAttribute(node, isModeFonctionnement);
+function _bindEndpointcallback(node_1) {
+    return __awaiter(this, arguments, void 0, function* (node, isModeFonctionnement = false) {
+        let initZoneAttribute = yield getInitZoneAttribute(node, isModeFonctionnement); // call to create the attribute if not exist
         try {
-            // const { first, data } = await _sendUpdateRequest(node);
-            // if (first) return;
-            yield _sendUpdateRequest(node);
+            const itsFirstTime = !nodeBindedForTheFirstTime[node.getId().get()];
+            // on first time, just set the flag to true and return
+            // because the bind is executed on the initialization of the EndpointProcess
+            if (itsFirstTime) {
+                console.log(`[${node._server_id}] - [${node.getName().get()}] - binded`);
+                nodeBindedForTheFirstTime[node.getId().get()] = true;
+                return; // avoid multiple call on the same node}
+            }
+            // await _sendUpdateRequest(node);
             if (initZoneAttribute)
                 initZoneAttribute.value.set("1");
             console.log(`[${node._server_id}] - [${node.getName().get()}] - updated successfully`);
@@ -76,7 +92,6 @@ function _bindEndpointcallback(node, isModeFonctionnement = false) {
         }
     });
 }
-exports._bindEndpointcallback = _bindEndpointcallback;
 function getInitZoneAttribute(node, isModeFonctionnement) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!isModeFonctionnement)
@@ -85,36 +100,35 @@ function getInitZoneAttribute(node, isModeFonctionnement) {
         return getOrCreateAttribute(node, attribute_category, init_zone_attribute_name, attribute_default_value);
     });
 }
-exports.getInitZoneAttribute = getInitZoneAttribute;
-function getOrCreateAttribute(node, attributeCategory, attributeName, attributeValue = "null") {
-    return __awaiter(this, void 0, void 0, function* () {
+function getOrCreateAttribute(node_1, attributeCategory_1, attributeName_1) {
+    return __awaiter(this, arguments, void 0, function* (node, attributeCategory, attributeName, attributeValue = "null") {
         const [attribute] = yield spinal_env_viewer_plugin_documentation_service_1.attributeService.getAttributesByCategory(node, attributeCategory, attributeName);
         if (attribute)
             return attribute;
         return spinal_env_viewer_plugin_documentation_service_1.attributeService.addAttributeByCategoryName(node, attributeCategory, attributeName, attributeValue);
     });
 }
-exports.getOrCreateAttribute = getOrCreateAttribute;
 function addAEndpointsToMap(nodes) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!Array.isArray(nodes))
             nodes = [nodes];
         const spinalUtils = SpinalGraphUtils_1.default.getInstance();
-        const promises = nodes.map((node) => spinalUtils.addEndpointsToMap(node));
-        const result = yield Promise.allSettled(promises);
-        return result
-            .filter((res) => res.status === "fulfilled")
-            .map((res) => res.value);
+        const result = yield _consumeBatch(nodes.map((node) => () => spinalUtils.addEndpointsToMap(node)), 50);
+        return result;
+        // const promises = nodes.map((node: SpinalNode) => spinalUtils.addEndpointsToMap(node));
+        // const result = await Promise.allSettled(promises);
+        // return result
+        // .filter((res) => res.status === "fulfilled")
+        // .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
     });
 }
-exports.addAEndpointsToMap = addAEndpointsToMap;
 // export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
 function _sendUpdateRequest(node) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         const graphUtils = SpinalGraphUtils_1.default.getInstance();
         const id = node.getId().get();
-        let data = graphUtils.getEndpointDataInMap(id);
+        let data = yield graphUtils.getEndpointDataInMap(node);
         // this condition is only true on initialization
         // if (!data) return { first: true, data: await graphUtils.addEndpointsToMap(node) };
         if (!data)
@@ -127,11 +141,11 @@ function _sendUpdateRequest(node) {
         const res = yield spinalPilot_1.default.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
         data.element.currentValue.set(value); // change element value in graph
         return data;
+        // return { first: false, data };
     });
 }
-exports._sendUpdateRequest = _sendUpdateRequest;
-function _consumeBatch(promises, batchSize = 10) {
-    return __awaiter(this, void 0, void 0, function* () {
+function _consumeBatch(promises_1) {
+    return __awaiter(this, arguments, void 0, function* (promises, batchSize = 10) {
         let index = 0;
         const result = [];
         while (index < promises.length) {
@@ -146,7 +160,6 @@ function _consumeBatch(promises, batchSize = 10) {
         return result;
     });
 }
-exports._consumeBatch = _consumeBatch;
 /////////////////////////////////////////////////////////////////////////
 //                             OPCUA Utils                             //   
 /////////////////////////////////////////////////////////////////////////
@@ -159,7 +172,6 @@ function getServerUrl(serverInfo) {
     const ip = serverInfo.address || serverInfo.ip;
     return `opc.tcp://${ip}:${serverInfo.port}${endpoint}`;
 }
-exports.getServerUrl = getServerUrl;
 const coerceBoolean = (data) => {
     return data === "true" || data === "1" || data === true;
 };
@@ -202,5 +214,4 @@ function coerceStringToDataType(dataType, arrayType, VariantArrayType, data) {
         return data.map((d) => c(d));
     }
 }
-exports.coerceStringToDataType = coerceStringToDataType;
 //# sourceMappingURL=utils.js.map
