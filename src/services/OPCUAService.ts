@@ -188,7 +188,8 @@ export class OPCUAService extends EventEmitter {
 
             }
 
-            return StatusCodes;
+            if (!isGood) throw new Error("Invalid value or data type for node");
+            return statusCode;
 
 
             // const _value = this._parseValue(valueRank, arrayDimension, dataType, value);
@@ -204,7 +205,8 @@ export class OPCUAService extends EventEmitter {
             // return statusCode;
         } catch (error) {
             console.log("error writing value", error);
-            return StatusCodes.BadInternalError;
+            // return StatusCodes.BadInternalError;
+            throw error;
         }
     }
 
