@@ -30,3 +30,5 @@ DEFAULT_ATTRIBUTE_VALUE="null"
 
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ORGAN_NAME = "spinal-organ-opcua-command"
+
+NODEOPCUA_LOG_LEVEL=3    #3 for display only errors 
