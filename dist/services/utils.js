@@ -139,6 +139,7 @@ function _sendUpdateRequest(node) {
         const value = data.attribute.value.get();
         const url = getServerUrl(data.serverInfo);
         const opcuaService = new OPCUAService_1.default(url);
+        yield opcuaService.initialize();
         yield opcuaService.connect();
         let nodeId = yield opcuaService.getNodeIdByPath((_b = (_a = data.node.info) === null || _a === void 0 ? void 0 : _a.path) === null || _b === void 0 ? void 0 : _b.get());
         if (!nodeId) {

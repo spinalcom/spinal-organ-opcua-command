@@ -144,6 +144,7 @@ export async function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointDat
     const url = getServerUrl(data.serverInfo);
 
     const opcuaService = new OPCUAService(url);
+    await opcuaService.initialize();
     await opcuaService.connect();
 
     let nodeId = await opcuaService.getNodeIdByPath(data.node.info?.path?.get());
