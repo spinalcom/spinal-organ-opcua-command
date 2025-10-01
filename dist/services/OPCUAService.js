@@ -292,6 +292,25 @@ class OPCUAService extends events_1.EventEmitter {
         }
         return null;
     }
+    getNodeIdByPath(path) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            try {
+                if (!path.startsWith("/Objects"))
+                    path = "/Objects" + path;
+                if (path.endsWith("/"))
+                    path = path.slice(0, -1); // remove trailing slash
+                const browsePaths = (0, node_opcua_1.makeBrowsePath)("RootFolder", path);
+                const nodesFound = yield this.session.translateBrowsePath(browsePaths);
+                if (!nodesFound.targets || nodesFound.targets.length === 0)
+                    return;
+                return (_a = nodesFound.targets[0].targetId) === null || _a === void 0 ? void 0 : _a.toString();
+            }
+            catch (error) {
+                return;
+            }
+        });
+    }
 }
 exports.OPCUAService = OPCUAService;
 exports.default = OPCUAService;

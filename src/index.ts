@@ -2,12 +2,14 @@ import env_data from "./services/env";
 import { spinalCore, FileSystem } from "spinal-core-connectorjs_type"
 import SpinalUtils from "./services/SpinalGraphUtils";
 import { addAEndpointsToMap, bindEndpoints, getBmsEndpointsNodes, getStartNodes, init } from "./services/utils";
-
+import { setWarningLogger,  }  from "node-opcua-debug"
 
 FileSystem.onConnectionError = (code: number) => {
     console.log("redemarrage");
     process.exit(code); // kill le process;
 }
+
+
 
 
 (async function () {

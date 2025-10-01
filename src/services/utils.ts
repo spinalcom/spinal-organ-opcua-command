@@ -8,6 +8,7 @@ import { spinalCore } from "spinal-core-connectorjs_type";
 import ConfigFile from "spinal-lib-organ-monitoring";
 import EndpointProcess, { TModels } from "./EndpointProcess";
 import { SpinalAttribute } from "spinal-models-documentation";
+import OPCUAService from "./OPCUAService";
 
 
 type Consumedfunction<T> = () => Promise<T>;
@@ -70,16 +71,16 @@ export function bindEndpoints(groupDaliEndpoints: TModels[], modeFonctionnementE
 export async function _bindEndpointcallback(node: SpinalNode, isModeFonctionnement: boolean = false) {
 
     let initZoneAttribute = await getInitZoneAttribute(node, isModeFonctionnement); // call to create the attribute if not exist
-    
+
     try {
-        
+
         const itsFirstTime = !nodeBindedForTheFirstTime[node.getId().get()];
-        
+
         // on first time, just set the flag to true and return
         // because the bind is executed on the initialization of the EndpointProcess
         if (itsFirstTime) {
             console.log(`[${node._server_id}] - [${node.getName().get()}] - binded`);
-            nodeBindedForTheFirstTime[node.getId().get()] = true;   
+            nodeBindedForTheFirstTime[node.getId().get()] = true;
             return; // avoid multiple call on the same node}
         }
 
@@ -119,11 +120,11 @@ export async function addAEndpointsToMap(nodes: SpinalNode | SpinalNode[]): Prom
     // const result = await Promise.allSettled(promises);
 
     // return result
-        // .filter((res) => res.status === "fulfilled")
-        // .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
+    // .filter((res) => res.status === "fulfilled")
+    // .map((res) => (res as PromiseFulfilledResult<IEndpointData>).value);
 
 
-    }
+}
 
 // export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
 export async function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointData> {
@@ -139,8 +140,20 @@ export async function _sendUpdateRequest(node: SpinalNode): Promise<IEndpointDat
 
 
     const value = data.attribute.value.get();
-    const nodeId: string = data.node.info?.idNetwork?.get();
+
     const url = getServerUrl(data.serverInfo);
+
+    const opcuaService = new OPCUAService(url);
+    await opcuaService.connect();
+
+    let nodeId = await opcuaService.getNodeIdByPath(data.node.info?.path?.get());
+
+    if (!nodeId) {
+        console.warn(`can't find nodeId for node ${data.node.getName().get()} with path ! it will try with old idNetwork`);
+        nodeId = data.node.info?.idNetwork?.get();
+    }
+
+    // const nodeId: string = data.node.info?.idNetwork?.get();
 
     const res = await SpinalPilot.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
     data.element.currentValue.set(value); // change element value in graph

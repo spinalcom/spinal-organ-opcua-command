@@ -28,5 +28,6 @@ export declare class OPCUAService extends EventEmitter {
     private _parseValue;
     private coerceStringToDataType;
     private _formatDataValue;
+    getNodeIdByPath(path?: string): Promise<string>;
 }
 export default OPCUAService;

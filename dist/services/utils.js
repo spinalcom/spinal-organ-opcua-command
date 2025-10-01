@@ -30,6 +30,7 @@ const env_1 = require("./env");
 const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
 const spinal_lib_organ_monitoring_1 = require("spinal-lib-organ-monitoring");
 const EndpointProcess_1 = require("./EndpointProcess");
+const OPCUAService_1 = require("./OPCUAService");
 const nodeBindedForTheFirstTime = {};
 /////////////////////////////////////////////////////////////////////////
 //                             Nodes                                   //
@@ -125,7 +126,7 @@ function addAEndpointsToMap(nodes) {
 // export async function _sendUpdateRequest(node: SpinalNode): Promise<{ first: boolean, data: IEndpointData }> {
 function _sendUpdateRequest(node) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
+        var _a, _b, _c, _d;
         const graphUtils = SpinalGraphUtils_1.default.getInstance();
         const id = node.getId().get();
         let data = yield graphUtils.getEndpointDataInMap(node);
@@ -136,8 +137,15 @@ function _sendUpdateRequest(node) {
         if (!data.serverInfo)
             throw `this node is not link to an opcua network context`;
         const value = data.attribute.value.get();
-        const nodeId = (_b = (_a = data.node.info) === null || _a === void 0 ? void 0 : _a.idNetwork) === null || _b === void 0 ? void 0 : _b.get();
         const url = getServerUrl(data.serverInfo);
+        const opcuaService = new OPCUAService_1.default(url);
+        yield opcuaService.connect();
+        let nodeId = yield opcuaService.getNodeIdByPath((_b = (_a = data.node.info) === null || _a === void 0 ? void 0 : _a.path) === null || _b === void 0 ? void 0 : _b.get());
+        if (!nodeId) {
+            console.warn(`can't find nodeId for node ${data.node.getName().get()} with path ! it will try with old idNetwork`);
+            nodeId = (_d = (_c = data.node.info) === null || _c === void 0 ? void 0 : _c.idNetwork) === null || _d === void 0 ? void 0 : _d.get();
+        }
+        // const nodeId: string = data.node.info?.idNetwork?.get();
         const res = yield spinalPilot_1.default.getInstance().sendUpdateRequest(url, { nodeId, value }); // send request to OPCUA Server
         data.element.currentValue.set(value); // change element value in graph
         return data;

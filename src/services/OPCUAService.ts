@@ -7,7 +7,9 @@ import {
     resolveNodeId,
     coerceNodeId,
     DataValue,
-    StatusCode
+    StatusCode,
+    makeBrowsePath,
+    NodeClass
 } from "node-opcua";
 
 import { EventEmitter } from "events";
@@ -329,6 +331,26 @@ export class OPCUAService extends EventEmitter {
         }
 
         return null;
+    }
+
+    public async getNodeIdByPath(path?: string): Promise<string> {
+
+        try {
+            if (!path.startsWith("/Objects")) path = "/Objects" + path;
+
+            if (path.endsWith("/")) path = path.slice(0, -1); // remove trailing slash
+
+            const browsePaths = makeBrowsePath("RootFolder", path);
+            const nodesFound = await this.session.translateBrowsePath(browsePaths);
+
+            if (!nodesFound.targets || nodesFound.targets.length === 0) return;
+
+            return nodesFound.targets[0].targetId?.toString();
+
+        } catch (error) {
+            return;
+        }
+
     }
 
 }
